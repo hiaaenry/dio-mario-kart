@@ -65,6 +65,20 @@ async function logRollResult(characterName, type, diceResult, attribute) {
     console.log(`${characterName} rolled a ${type} die on the side ${diceResult} adding: ${diceResult} + ${attribute} = ${diceResult + attribute}`);
 }
 
+async function fightLogic(winner, loser, typePower) {
+    if (!loser.points > 0) {
+        console.log(`${loser.name} has no points to lose`);
+    } else if (typePower === "turtle shell") {
+        console.log(`${winner.name} won the fight. ${loser.name} lost one point`);
+        loser.points--;
+    } else if (typePower === "bomb" && loser.points >= 2) {
+        console.log(`${winner.name} won the fight. ${loser.name} lost two points`);
+        loser.points = loser.points - 2;
+    } else if (typePower === "bomb" && loser.points < 2) {
+        console.log(`${loser.name} has no points to lose`);
+    }
+}
+
 async function playRaceEngine(player, opponent) {
     for (let round = 0; round < 5; round++) {
         console.log(`Round ${round}`)
@@ -98,19 +112,24 @@ async function playRaceEngine(player, opponent) {
             let resultPlayerPower = playerDieResult + player.power
             let resultOpponentPower = opponentDieResult + opponent.power
 
+            let typePower
+
+            let powerTypes = ["bomb", "turtle shell"];
+
+            const randomPower = Math.floor(Math.random() * powerTypes.length);
+            typePower = powerTypes[randomPower];
+
             console.log(`${player.name} confronted ${opponent.name}`)
 
             await logRollResult(player.name, "power", playerDieResult, player.power);
             await logRollResult(opponent.name, "power", opponentDieResult, opponent.power);
 
             if (resultPlayerPower > resultOpponentPower && opponent.points > 0) {
-                console.log(`${player.name} won the fight. ${opponent.name} lost one point`)
-                opponent.points--;
+                fightLogic(player, opponent, typePower)
             }
 
             if (resultOpponentPower > resultPlayerPower && player.points > 0) {
-                console.log(`${opponent.name} won the fight. ${player.name} lost one point`)
-                player.points--;
+                fightLogic(opponent, player, typePower)
             }
 
             if (resultPlayerPower === resultOpponentPower) {
@@ -130,9 +149,23 @@ async function playRaceEngine(player, opponent) {
     }
 }
 
+async function declareWinner(player, opponent) {
+    console.log("Final result:")
+    console.log(`${player.name}: ${player.points} point(s)`);
+    console.log(`${opponent.name}: ${opponent.points} point(s)`);
+
+    if (player.points > opponent.points)
+        console.log(`\n${player.name} won the race. Congratulations`);
+    else if (opponent.points > player.points)
+        console.log(`\n${opponent.name} won the race. Congratulations`);
+    else
+        console.log("The race ended in a draw");
+}
+
 (async function main() {
     const { selectedPlayer, selectedOpponent } = await selectPlayer()
     console.log(`Race between ${selectedPlayer.name} and ${selectedOpponent.name}`);
 
     await playRaceEngine(selectedPlayer, selectedOpponent)
+    await declareWinner(selectedPlayer, selectedOpponent)
 })()
